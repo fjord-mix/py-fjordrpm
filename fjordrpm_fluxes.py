@@ -143,10 +143,10 @@ def get_mixing_fluxes(i, p, s):
     gp = p['g'] * (p['betaS'] * (S0[1:] - S0[:-1]) - p['betaT'] * (T0[1:] - T0[:-1]))
     
     # Calculate horizontal velocity (u) from the volume fluxes
-    if len(s['QVp'].shape) == 3:
+    if s['QVp'].ndim == 2:
         u = (np.sum(s['QVp'][:, :, i], axis=0) - s['QVs'][:, i]) / (2 * p['W'] * H0)
     else:
-        u = (s['QVp'][:, :, i].T - s['QVs'][:, i]) / (2 * p['W'] * H0)
+        u = (s['QVp'][:, i] - s['QVs'][:, i]) / (2 * p['W'] * H0)
     
     # Compute the Richardson number (Ri)
     du = u[1:] - u[:-1]
@@ -163,10 +163,10 @@ def get_mixing_fluxes(i, p, s):
     QT = 2 * p['W'] * p['L'] * Kz * (T0[1:] - T0[:-1]) / (H0[1:] + H0[:-1])
     
     # The final layer fluxes (QSk0, QTk0) are the net of the interface fluxes
-    #QTk0 = np.concatenate(([QT, 0]) - np.concatenate(([0], QT]))) # TODO: check this part of the code
-    #QSk0 = np.concatenate(([QS, 0]) - np.concatenate(([0], QS])))
-    pass
-    #return QVk0, QTk0, QSk0
+    QTk0 = np.concatenate(QT, [0]) - np.concatenate([0], QT)
+    QSk0 = np.concatenate(QS, [0]) - np.concatenate([0], QS)
+
+    return QVk0, QTk0, QSk0
 
 
 def get_iceberg_fluxes(i, p, s):
@@ -250,9 +250,9 @@ def get_vertical_fluxes(i, s):
     S0 = s['S'][:, i]
     
     # Compute net flux imbalance (sum of volume, shelf, and iceberg fluxes)
-    if s['QVp'].ndim == 1:  # If QVp is one-dimensional
-        Qnet = s['QVp'][i] + s['QVs'][:, i] + s['QVi'][:, i]
-    else:  # If QVp is multi-dimensional
+    if s['QVp'].ndim == 2:  # If QVp has one plume
+        Qnet = s['QVp'][:,i] + s['QVs'][:, i] + s['QVi'][:, i]
+    else:  # If QVp has several plumes
         Qnet = np.sum(s['QVp'][:, :, i], axis=0) + s['QVs'][:, i] + s['QVi'][:, i]
 
     # Vertical flux required for no net volume change (cumulative sum)

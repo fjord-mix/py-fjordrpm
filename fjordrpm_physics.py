@@ -20,14 +20,17 @@ def check_inputs(p, t, f, a):
     # Check provided depths are positive
     if any(depth < 0 for depth in [p['Hsill'], p['Hgl'], p['H']]):
         #TODO: does this still hold if len(p['Hsill'] > 1?)
+        status = 1
         raise ValueError('p.H, p.Hgl and p.Hsill must be positive')
 
     # Check dimensionality of initial conditions
     if not (a['H0'].shape == a['S0'].shape == a['T0'].shape == a['I0'].shape == (p['N'], 1)):
+        status = 1
         raise ValueError('Initial conditions (a.H0, a.S0, a.T0, a.I0) must have dimensions p.N x 1')
 
     # Check sum of layer thicknesses is equal to fjord depth
     if abs(np.sum(a['H0']) - p['H']) > 1e-10:
+        status = 1
         raise ValueError('Layer thicknesses (a.H0) must sum to fjord depth (p.H)')
 
     # Check dimensionality of shelf forcing
@@ -35,34 +38,39 @@ def check_inputs(p, t, f, a):
     nt = len(f['ts'])
 
     if f['ts'].shape != (1, nt):
+        status = 1
         raise ValueError('f.ts must have dimensions 1 x nt')
 
     if f['zs'].shape != (nz, 1):
+        status = 1
         raise ValueError('f.zs must have dimensions nz x 1')
 
     if f['Ss'].shape != f['Ts'].shape or f['Ss'].shape != (nz, nt):
+        status = 1
         raise ValueError('f.Ss and f.Ts must have dimensions length(f.zs) x length(f.ts)')
 
     # Check dimensionality of discharge forcing
     nt = len(f['tsg'])
 
     if f['tsg'].shape != (1, nt):
+        status = 1
         raise ValueError('f.tsg must have dimensions 1 x nt')
 
     if f['Qsg'].shape[1] != nt:
+        status = 1
         raise ValueError('Second dimension of f.Qsg must have length nt')
 
     # Check number of plumes
     if f['Qsg'].shape[0] != len(p['wp']) or f['Qsg'].shape[0] != len(p['Hgl']):
-        raise ValueError('Check num plumes=size(f.Qsg,1)=len(p.wp)=len(p.Hgl)')
+        status = 1
+        raise ValueError('Check num_plumes==f.Qsg.shape[0]==len(p.wp)==len(p.Hgl)')
 
     # Uncomment the below section if you want to check if t_save is a subset of t
-    # if 't_save' not in p:
-    #     p['t_save'] = t
-    # if not np.all(np.isin(p['t_save'], t)):
-    #     print("Error: the values where the solution is saved, p.t_save, must be a subset of the values where the solution is computed, t.")
-    #     status = 1
-    #     return status
+    if 't_save' not in p:
+        p['t_save'] = t
+    if not np.all(np.isin(p['t_save'], t)):
+        status = 1
+        raise ValueError("The values where the solution is saved, p.t_save, must be a subset of the values where the solution is computed, t.")
 
     return status
 
@@ -96,11 +104,11 @@ def bin_forcings(f, H, t):
     z0 = np.unique(np.sort(np.concatenate(([0], f['zs'], -np.cumsum(H)))) )
 
     # Interpolate the shelf temperature and salinity profiles onto the new grid z0
-    interp_Ts = interp1d(f['zs'], f['Ts'], kind='pchip', axis=0, fill_value="extrapolate")
-    interp_Ss = interp1d(f['zs'], f['Ss'], kind='pchip', axis=0, fill_value="extrapolate")
+    T0 = interp1d(f['zs'], f['Ts'], kind='pchip', axis=0, fill_value="extrapolate")(z0)
+    S0 = interp1d(f['zs'], f['Ss'], kind='pchip', axis=0, fill_value="extrapolate")(z0)
     
-    S0 = interp_Ss(z0)
-    T0 = interp_Ts(z0)
+    #S0 = interp_Ss(z0)
+    #T0 = interp_Ts(z0)
 
     # Calculate shelf temperature and salinity (Ts0 and Ss0) on model layers
     ints = np.concatenate(([0], -np.cumsum(H)))
@@ -116,11 +124,11 @@ def bin_forcings(f, H, t):
 
     # Second, put forcings on model time steps
     # Interpolate shelf conditions to model time steps
-    interp_Ss_t = interp1d(f['ts'], Ss, kind='linear', axis=1, fill_value="extrapolate")
-    interp_Ts_t = interp1d(f['ts'], Ts, kind='linear', axis=1, fill_value="extrapolate")
+    Ss = interp1d(f['ts'], Ss, kind='linear', axis=1, fill_value="extrapolate")(t)
+    Ts = interp1d(f['ts'], Ts, kind='linear', axis=1, fill_value="extrapolate")(t)
     
-    Ss = interp_Ss_t(t)
-    Ts = interp_Ts_t(t)
+    #Ss = interp_Ss_t(t)
+    #Ts = interp_Ts_t(t)
 
     # Subglacial discharge
     Qsg = np.zeros((len(f['Qsg']), len(t)))
@@ -128,7 +136,6 @@ def bin_forcings(f, H, t):
         Qsg[j, :] = interp1d(f['tsg'], f['Qsg'][j, :], kind='linear', fill_value="extrapolate")(t)
     
     return Ts, Ss, Qsg
-
 
 
 def initialise_variables(p, t, f, a):
@@ -279,7 +286,7 @@ def step_solution_forwards(i, p, s):
         s['T'][:, i+1] = s['T'][:, i] + s['dt'][i] * p['sid'] * (s['QTp'][:, :, i].sum(axis=0) + s['QTs'][:, i] + s['QTk'][:, i] + s['QTi'][:, i] + s['QTv'][:, i]) / s['V']
         s['S'][:, i+1] = s['S'][:, i] + s['dt'][i] * p['sid'] * (s['QSp'][:, :, i].sum(axis=0) + s['QSs'][:, i] + s['QSk'][:, i] + s['QSi'][:, i] + s['QSv'][:, i]) / s['V']
     else:
-        # If QTp is 2D, sum the fluxes across the plume dimension
+        # If QTp is 3D (i.e., more than one plume), it will sum the fluxes across the plume dimension
         s['T'][:, i+1] = s['T'][:, i] + s['dt'][i] * p['sid'] * (s['QTp'][:, :, i].sum(axis=0) + s['QTs'][:, i] + s['QTk'][:, i] + s['QTi'][:, i] + s['QTv'][:, i]) / s['V']
         s['S'][:, i+1] = s['S'][:, i] + s['dt'][i] * p['sid'] * (s['QSp'][:, :, i].sum(axis=0) + s['QSs'][:, i] + s['QSk'][:, i] + s['QSi'][:, i] + s['QSv'][:, i]) / s['V']
     
@@ -301,12 +308,12 @@ def check_solution(i, s):
     status = 0  # Initialize status to 0 (no error)
 
     # Check that volume is conserved
-    if s['QVp'].ndim == 1:
-        # If QVp is 1D (single plume), compute max dV/dt
-        maxdVdt = np.max(np.abs(s['QVp'][:, :, i].sum(axis=0) + s['QVs'][:, i] + s['QVk'][:, i] + s['QVi'][:, i] + s['QVv'][:, i]))
-    else:
-        # If QVp is 2D (multiple plumes), sum the fluxes across plumes
-        maxdVdt = np.max(np.abs(np.sum(s['QVp'][:, :, i], axis=0) + s['QVs'][:, i] + s['QVk'][:, i] + s['QVi'][:, i] + s['QVv'][:, i]))
+    #if s['QVp'].ndim == 1:
+    #    # If QVp is 1D (single plume), compute max dV/dt
+    #    maxdVdt = np.max(np.abs(s['QVp'][:, :, i].sum(axis=0) + s['QVs'][:, i] + s['QVk'][:, i] + s['QVi'][:, i] + s['QVv'][:, i]))
+    #else:
+    #    # If QVp is 2D (multiple plumes), sum the fluxes across plumes
+    maxdVdt = np.max(np.abs(np.sum(s['QVp'][:, :, i], axis=0) + s['QVs'][:, i] + s['QVk'][:, i] + s['QVi'][:, i] + s['QVv'][:, i]))
 
     # If the maximum change in volume is too large, flag an error
     if maxdVdt > 1e-8:
@@ -353,7 +360,7 @@ def get_final_output(p, t, s, status):
     # Plume exchange fluxes and melt rates
     s['QVp'] = s['QVp'][:, :, inx]
     s['QTp'] = s['QTp'][:, :, inx]
-    s['QSp'] = s['QSp'][:, inx]
+    s['QSp'] = s['QSp'][:, :, inx]
     s['QMp'] = s['QMp'][:, :, inx]
     for j in range(len(p['wp'])):
         s['plumemeltrate'][j, :, :] = p['sid'] * s['QMp'][j, :, :] / (p['wp'][j] * s['H'])
@@ -399,8 +406,7 @@ def run_model(p, t, f, a):
     RUN_MODEL Run fjordRPM simulation.
     s = RUN_MODEL(p, t, f, a, path_out) runs the fjordRPM simulation for
     parameters structure p, time vector t, forcings structure f, initial
-    conditions structure a, and returns solution structure s. If path_out
-    is specified, RUN_MODEL will save a file.
+    conditions structure a, and returns solution structure s.
     """
     # Check for errors in the given inputs
     status = check_inputs(p, t, f, a)
