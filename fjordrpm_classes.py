@@ -17,7 +17,7 @@ class Parameters:
     
     def __init__(self,config):
         self.A0     = config.A0
-        self.P0     = config.P0
+        self.wp     = np.array([config.wp])
         self.C0     = config.C0
         self.K0     = config.K0
         self.Kb     = config.Kb
@@ -42,20 +42,33 @@ class Parameters:
         self.alphap = config.alphap
         self.sid    = config.sid
         
+        self.t_save          = np.arange(config.time_begin,config.time_end,config.dt_out)
+        self.run_plume_every = np.floor(config.dt_model/config.dt_plume)
+        
         # geometry attributes
         self.L      = config.L
         self.H      = config.H
         self.Hgl    = config.Hgl
         self.Hsill  = config.Hsill
+        self.W      = config.W    
         self.N      = config.N        
-        self.W      = config.W        
+        
+        if self.Hsill >= self.H:
+            self.sill = 0
       
         return
     
-    # Hsill might be updates if glacier NetCDF has n_plumes grounding-line depths
+    # Hsill might need updates if glacier NetCDF has n_plumes grounding-line depths
     def set_gl(self,gl_depths):
-        #TODO: check how many plumes and update accordingly
         self.Hgl = gl_depths
+        if len(gl_depths) > 1 and len(self.wp) ==1:
+            wp = self.wp
+            self.wp = np.array([wp for _ in range(len(gl_depths))])
+
+    # in case we need to update the plume widths from say a NetCDF
+    def set_wp_array(self,wp_array):
+        self.wp = wp_array
+        return
 
     def set_hypsometry(self,object,z):
         if hasattr(object,'hypsometry_fun'):
@@ -65,41 +78,45 @@ class Parameters:
             self.W = np.interp(z,ds_hyp.depth,ds_hyp.width)
         return
     
+    
     def to_dict(self):
         '''returns all relevant attributes as a single dictionary'''
         p = {}
-        p['A0'] = self.A0
-        p['P0'] = self.P0
-        p['K0'] = self.K0
-        p['Kb'] = self.Kb
+        p['A0']  = self.A0
+        p['wp']  = self.wp
+        p['K0']  = self.K0
+        p['Kb']  = self.Kb
         p['Ri0'] = self.Ri0
-        p['M0'] = self.M0
+        p['M0']  = self.M0
         
-        p['U0'] =     self.U0    
-        p['nu'] =     self.nu    
-        p['g'] =      self.g     
-        p['betaS'] =  self.betaS 
-        p['betaT'] =  self.betaT 
-        p['l'] =      self.l     
-        p['cp'] =     self.cp    
-        p['ci'] =     self.ci    
-        p['l1'] =     self.l1    
-        p['l2'] =     self.l2    
-        p['l3'] =     self.l3    
-        p['GT'] =     self.GT    
-        p['GS'] =     self.GS    
-        p['Cd'] =     self.Cd    
-        p['Ti'] =     self.Ti    
+        p['U0']     = self.U0    
+        p['nu']     = self.nu    
+        p['g']      = self.g     
+        p['betaS']  = self.betaS 
+        p['betaT']  = self.betaT 
+        p['l']      = self.l     
+        p['cp']     = self.cp    
+        p['ci']     = self.ci    
+        p['l1']     = self.l1    
+        p['l2']     = self.l2    
+        p['l3']     = self.l3    
+        p['GT']     = self.GT    
+        p['GS']     = self.GS    
+        p['Cd']     = self.Cd    
+        p['Ti']     = self.Ti    
         p['alphai'] = self.alphai
         p['alphap'] = self.alphap
-        p['sid'] =    self.sid           
-        p['W'] =      self.W     
-        p['L'] =      self.L     
-        p['H'] =      self.H     
-        p['Hgl'] =    self.Hgl   
-        p['Hsill'] =  self.Hsill 
-        p['N'] =      self.N     
+        p['sid']    = self.sid           
+        p['W']      = self.W     
+        p['L']      = self.L     
+        p['H']      = self.H     
+        p['Hgl']    = self.Hgl   
+        p['Hsill']  = self.Hsill 
+        p['N']      = self.N     
         
+        p['t_save']          = self.t_save
+        p['run_plume_every'] = self.run_plume_every
+      
         return p
 
 class Forcings:
