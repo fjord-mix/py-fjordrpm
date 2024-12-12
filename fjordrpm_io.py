@@ -185,6 +185,7 @@ def parse_config(object):
     object.time_end   = pd.to_datetime(object.date_end).to_julian_date()
     object.dt_model   = tryread(object,"Time","dt_model",float)
     object.dt_plume   = tryread(object,"Time","dt_plume",float)
+    object.dt_out     = tryread(object,"Time","dt_output",float)
 
 
     #Forcing
@@ -216,6 +217,7 @@ def parse_config(object):
     object.Hsill      = tryread(object,"Geometry","fjord_sill_depth",float,(0,1e20))
     object.hypsometry = tryread(object,"Geometry","type_hypsometry",str,['cuboid','formula','read_from_file'])
     object.N          = tryread(object,"Geometry","fjord_n_layers",int,(0,1e20))
+    object.sill       = tryread(object,"Geometry","fjord_has_sill",bool,default=True)
     match object.hypsometry:
         case 'cuboid':
             pass # nothing to do
@@ -231,7 +233,7 @@ def parse_config(object):
     
     #Parameters
     object.A0     = tryread(object,"Parameters","iceberg_area_A0",float,(0,1e20),default=3e8)
-    object.P0     = tryread(object,"Parameters","plume_width_P0",float,(0,1e20),default=250)
+    object.wp     = tryread(object,"Parameters","plume_width_wp",float,(0,1e20),default=250)
     object.C0     = tryread(object,"Parameters","shelf_exchange_C0",float,(0,1e20),default=1e4)
     object.K0     = tryread(object,"Parameters","vertical_mixing_K0",float,(0,1e20),default=5e-3)
     object.Kb     = tryread(object,"Parameters","background_mixing_Kb",float,(0,1e20),default=1e-5)
