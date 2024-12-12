@@ -1,5 +1,5 @@
 # Ignore hidden/cached files
-
+test_inputs/
 
 # Ignore old backup folders
 z_bkp*/
