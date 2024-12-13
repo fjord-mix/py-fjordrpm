@@ -64,6 +64,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     Sa = np.flipud(S0)
     H0 = np.flipud(H0)
     kgl = len(H0) - kgl  # Adjust grounding line index
+    mdot,Tb,Sb = [np.zeros(len(H0)) for _ in range(3)]
 
     # Initialise output variables
     Qent = np.zeros(len(H0))
@@ -94,7 +95,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     QS[kgl] = b[kgl] * u[kgl] * Sp[kgl]
 
     # Call meltrate for the first layer
-    mdot, Tb, Sb = meltrate(p, u[kgl], Tp[kgl], Sp[kgl], p['Hgl'][j])
+    mdot[kgl], Tb[kgl], Sb[kgl] = meltrate(p, u[kgl], Tp[kgl], Sp[kgl], p['Hgl'][j])
 
     # Loop over layers to compute plume dynamics
     k = kgl
@@ -120,7 +121,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
         Sp[k] = QS[k] / QV[k]
         gp[k] = p['g'] * (p['betaS'] * (Sa[k] - Sp[k]) - p['betaT'] * (Ta[k] - Tp[k]))
         edot[k] = p['alphap'] * u[k]
-        mdot, Tb, Sb = meltrate(p, u[k], Tp[k], Sp[k], p['Hgl'][j] - np.sum(H0[kgl:k]))
+        mdot[k], Tb[k], Sb[k] = meltrate(p, u[k], Tp[k], Sp[k], p['Hgl'][j] - np.sum(H0[kgl:k]))
 
     # Scale volume fluxes for plume width and reverse order to orient shallowest first
     Qent = np.flipud(Qent) * p['wp'][j]

@@ -28,11 +28,11 @@ class FjordRPM():
         
     def run_fjord(self):
         # can list all attributes of a classm e.g., self.p.__dict__.keys()
-        object.print2log(f"Starting model run {object.run_name}...")
+        self.print2log(f"Starting model run {self.run_name}...")
         fph.run_model(self.p.to_dict(),self.t,self.f.to_dict(),self.a.to_dict()) #TODO: dynamical core (check translation from MATLAB)
-        object.print2log("Simulation complete.")
+        self.print2log("Simulation complete.")
         fio.save_out_nc(self) #TODO: write function to save outputs
-        object.print2log("Output saving complete.")
+        self.print2log("Output saving complete.")
         
     def print2log(self,text):
         """Function to print a line to the log file

@@ -218,6 +218,7 @@ def parse_config(object):
     object.hypsometry = tryread(object,"Geometry","type_hypsometry",str,['cuboid','formula','read_from_file'])
     object.N          = tryread(object,"Geometry","fjord_n_layers",int,(0,1e20))
     object.sill       = tryread(object,"Geometry","fjord_has_sill",bool,default=True)
+    
     match object.hypsometry:
         case 'cuboid':
             pass # nothing to do
@@ -248,7 +249,7 @@ def parse_config(object):
     object.betaS  = tryread(object,"Constants","betaS",float,(0,1e20),default=7.86e-4)
     object.betaT  = tryread(object,"Constants","betaT",float,(0,1e20),default=3.87e-5)
     object.l      = tryread(object,"Constants","l",float,(0,1e20),default=3.34e5)
-    object.cp     = tryread(object,"Constants","cw",float,(0,1e20),default=3974)
+    object.cw     = tryread(object,"Constants","cw",float,(0,1e20),default=3974)
     object.ci     = tryread(object,"Constants","ci",float,(0,1e20),default=2009)
     object.l1     = tryread(object,"Constants","l1",float,(-1e20,0),default=-5.73e-2)
     object.l2     = tryread(object,"Constants","l2",float,(0,1e20),default=8.32e-2)

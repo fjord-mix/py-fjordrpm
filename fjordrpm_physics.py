@@ -5,10 +5,11 @@ Created on Tue Dec 10 17:05:45 2024
 
 @author: original code from Slater et al. (2025; GMD), translated to Python by ChatGPT and reviewed by Martim Mas e Braga
 """
-
 import numpy as np
 from scipy.interpolate import interp1d
 import fjordrpm_fluxes as ffl
+import fjordrpm_utils  as fut
+
 
 def check_inputs(p, t, f, a):
     """
@@ -18,15 +19,16 @@ def check_inputs(p, t, f, a):
     status = 0
 
     # Check provided depths are positive
-    if any(depth < 0 for depth in [p['Hsill'], p['Hgl'], p['H']]):
+    if any(depth < 0 for depth in [p['Hsill'], p['H']]) or any(p['Hgl'] < 0):
         #TODO: does this still hold if len(p['Hsill'] > 1?)
         status = 1
         raise ValueError('p.H, p.Hgl and p.Hsill must be positive')
 
     # Check dimensionality of initial conditions
-    if not (a['H0'].shape == a['S0'].shape == a['T0'].shape == a['I0'].shape == (p['N'], 1)):
+    if not (a['H0'].shape == a['S0'].shape == a['T0'].shape == a['I0'].shape == (p['N'],)):
         status = 1
-        raise ValueError('Initial conditions (a.H0, a.S0, a.T0, a.I0) must have dimensions p.N x 1')
+        raise ValueError('Initial conditions (a.H0, a.S0, a.T0, and a.I0) must have dimensions p.N x 1')
+
 
     # Check sum of layer thicknesses is equal to fjord depth
     if abs(np.sum(a['H0']) - p['H']) > 1e-10:
@@ -37,13 +39,6 @@ def check_inputs(p, t, f, a):
     nz = len(f['zs'])
     nt = len(f['ts'])
 
-    if f['ts'].shape != (1, nt):
-        status = 1
-        raise ValueError('f.ts must have dimensions 1 x nt')
-
-    if f['zs'].shape != (nz, 1):
-        status = 1
-        raise ValueError('f.zs must have dimensions nz x 1')
 
     if f['Ss'].shape != f['Ts'].shape or f['Ss'].shape != (nz, nt):
         status = 1
@@ -52,9 +47,6 @@ def check_inputs(p, t, f, a):
     # Check dimensionality of discharge forcing
     nt = len(f['tsg'])
 
-    if f['tsg'].shape != (1, nt):
-        status = 1
-        raise ValueError('f.tsg must have dimensions 1 x nt')
 
     if f['Qsg'].shape[1] != nt:
         status = 1
@@ -73,69 +65,6 @@ def check_inputs(p, t, f, a):
         raise ValueError("The values where the solution is saved, p.t_save, must be a subset of the values where the solution is computed, t.")
 
     return status
-
-
-def bin_forcings(f, H, t):
-    """
-    BIN_FORCINGS Puts forcings on model layers and time steps.
-    [Ts, Ss, Qsg] = BIN_FORCINGS(f, H, t) calculates the mean value of 
-    shelf temperature and salinity over the depths of each model layer. It 
-    then interpolates both the resulting shelf profiles and subglacial 
-    discharge onto the model time steps.
-    
-    Parameters:
-    - f: Dictionary containing forcing data, with keys 'Ts', 'Ss', 'zs', 'ts', 'Qsg', 'tsg'.
-    - H: 1D array of layer thicknesses for the model.
-    - t: 1D array of model time steps.
-    
-    Returns:
-    - Ts: 2D array of temperature profiles for each model layer and time step.
-    - Ss: 2D array of salinity profiles for each model layer and time step.
-    - Qsg: 2D array of subglacial discharge for each plume and time step.
-    """
-    # Remove any NaN entries from the shelf profiles (assumes NaNs are the same for every time step)
-    nan_entries = np.isnan(f['Ts'][:, 0]) | np.isnan(f['Ss'][:, 0])
-    f['Ts'] = f['Ts'][~nan_entries, :]
-    f['Ss'] = f['Ss'][~nan_entries, :]
-    f['zs'] = f['zs'][~nan_entries]
-
-    # First, put shelf forcing on model layers
-    # Add the layer boundaries H0 into the vector of shelf z-values
-    z0 = np.unique(np.sort(np.concatenate(([0], f['zs'], -np.cumsum(H)))) )
-
-    # Interpolate the shelf temperature and salinity profiles onto the new grid z0
-    T0 = interp1d(f['zs'], f['Ts'], kind='pchip', axis=0, fill_value="extrapolate")(z0)
-    S0 = interp1d(f['zs'], f['Ss'], kind='pchip', axis=0, fill_value="extrapolate")(z0)
-    
-    #S0 = interp_Ss(z0)
-    #T0 = interp_Ts(z0)
-
-    # Calculate shelf temperature and salinity (Ts0 and Ss0) on model layers
-    ints = np.concatenate(([0], -np.cumsum(H)))
-    Ss = np.zeros((len(H), len(f['Ts'][0, :])))  # Assuming f['Ts'] has multiple time steps
-    Ts = np.zeros((len(H), len(f['Ts'][0, :])))
-    
-    for k in range(len(ints) - 1):
-        # Find the boundaries of the layer in the shelf grid z0
-        inds = np.where((z0 <= ints[k]) & (z0 >= ints[k + 1]))[0]
-        # Average the temperature and salinity profiles over this layer
-        Ss[k, :] = np.trapz(S0[inds, :], z0[inds]) / H[k]
-        Ts[k, :] = np.trapz(T0[inds, :], z0[inds]) / H[k]
-
-    # Second, put forcings on model time steps
-    # Interpolate shelf conditions to model time steps
-    Ss = interp1d(f['ts'], Ss, kind='linear', axis=1, fill_value="extrapolate")(t)
-    Ts = interp1d(f['ts'], Ts, kind='linear', axis=1, fill_value="extrapolate")(t)
-    
-    #Ss = interp_Ss_t(t)
-    #Ts = interp_Ts_t(t)
-
-    # Subglacial discharge
-    Qsg = np.zeros((len(f['Qsg']), len(t)))
-    for j in range(f['Qsg'].shape[0]):
-        Qsg[j, :] = interp1d(f['tsg'], f['Qsg'][j, :], kind='linear', fill_value="extrapolate")(t)
-    
-    return Ts, Ss, Qsg
 
 
 def initialise_variables(p, t, f, a):
@@ -167,7 +96,7 @@ def initialise_variables(p, t, f, a):
         [np.zeros((num_plumes, p['N'], len(t))) for _ in range(5)]
 
     # Fields with dimensions num plumes x length(t)
-    s['knb'] = np.zeros((num_plumes, len(t)))
+    s['knb'] = np.zeros((num_plumes, len(t)),dtype=int)
     s['Qsg'] = np.zeros((num_plumes, len(t)))
 
     # Initialise layer depths 
@@ -198,7 +127,7 @@ def initialise_variables(p, t, f, a):
     s['V'] = s['H'] * p['W'] * p['L']
 
     # Get forcings on model layers and at model time steps
-    s['Ts'], s['Ss'], s['Qsg'] = bin_forcings(f, s['H'], t)
+    s['Ts'], s['Ss'], s['Qsg'] = fut.bin_forcings(f, s['H'], t)
 
     # Set any discharge values less than 1e-3 to 0
     s['Qsg'][s['Qsg'] < 1e-3] = 0
@@ -207,7 +136,7 @@ def initialise_variables(p, t, f, a):
     ints = np.cumsum(s['H'])
     s['kgl'] = np.zeros(len(p['Hgl']), dtype=int)
     for j in range(len(p['Hgl'])):
-        s['kgl'][j] = np.where(ints >= p['Hgl'][j] - 1e-6)[0][0]
+        s['kgl'][j] = np.where(ints == fut.nearest(ints,p['Hgl'][j]))[0][0]
 
     # Redistribute initial conditions according to the new layer boundaries
     ints_old = np.concatenate(([0], np.cumsum(a['H0'])))
@@ -283,12 +212,12 @@ def step_solution_forwards(i, p, s):
     # Compute the tracer variables at timestep i+1
     if s['QTp'].ndim == 1:
         # If QTp is 1D, update temperature and salinity directly
-        s['T'][:, i+1] = s['T'][:, i] + s['dt'][i] * p['sid'] * (s['QTp'][:, :, i].sum(axis=0) + s['QTs'][:, i] + s['QTk'][:, i] + s['QTi'][:, i] + s['QTv'][:, i]) / s['V']
-        s['S'][:, i+1] = s['S'][:, i] + s['dt'][i] * p['sid'] * (s['QSp'][:, :, i].sum(axis=0) + s['QSs'][:, i] + s['QSk'][:, i] + s['QSi'][:, i] + s['QSv'][:, i]) / s['V']
+        s['T'][:, i+1] = s['T'][:, i] + s['dt'][i] * p['sid'] * (s['QTp'][:, i] + s['QTs'][:, i] + s['QTk'][:, i] + s['QTi'][:, i] + s['QTv'][:, i]) / s['V']
+        s['S'][:, i+1] = s['S'][:, i] + s['dt'][i] * p['sid'] * (s['QSp'][:, i] + s['QSs'][:, i] + s['QSk'][:, i] + s['QSi'][:, i] + s['QSv'][:, i]) / s['V']
     else:
         # If QTp is 3D (i.e., more than one plume), it will sum the fluxes across the plume dimension
-        s['T'][:, i+1] = s['T'][:, i] + s['dt'][i] * p['sid'] * (s['QTp'][:, :, i].sum(axis=0) + s['QTs'][:, i] + s['QTk'][:, i] + s['QTi'][:, i] + s['QTv'][:, i]) / s['V']
-        s['S'][:, i+1] = s['S'][:, i] + s['dt'][i] * p['sid'] * (s['QSp'][:, :, i].sum(axis=0) + s['QSs'][:, i] + s['QSk'][:, i] + s['QSi'][:, i] + s['QSv'][:, i]) / s['V']
+        s['T'][:, i+1] = s['T'][:, i] + s['dt'][i] * p['sid'] * (np.sum(s['QTp'][:, :, i],axis=0) + s['QTs'][:, i] + s['QTk'][:, i] + s['QTi'][:, i] + s['QTv'][:, i]) / s['V']
+        s['S'][:, i+1] = s['S'][:, i] + s['dt'][i] * p['sid'] * (np.sum(s['QSp'][:, :, i],axis=0) + s['QSs'][:, i] + s['QSk'][:, i] + s['QSi'][:, i] + s['QSv'][:, i]) / s['V']
     
     return s
 
@@ -339,7 +268,7 @@ def get_final_output(p, t, s, status):
     """
     
     # Recompute fluxes for the final output
-    s = ffl.compute_fluxes(s['T'].shape[1], p, s)
+    s = ffl.compute_fluxes(s['T'].shape[1]-1, p, s)
     
     # If there's an error, ensure that all time steps are properly saved
     if status == 1:
@@ -354,17 +283,15 @@ def get_final_output(p, t, s, status):
     s['S'] = s['S'][:, inx]
 
     # Calculate the vertical grid
-    ints = -np.concatenate(([0], np.cumsum(s['H'][:, 0])))
+    ints = np.concatenate(([0], np.cumsum(s['H'])))
     s['z'] = 0.5 * (ints[:-1] + ints[1:])
 
-    # Plume exchange fluxes and melt rates
+    # Plume exchange fluxes
     s['QVp'] = s['QVp'][:, :, inx]
     s['QTp'] = s['QTp'][:, :, inx]
     s['QSp'] = s['QSp'][:, :, inx]
     s['QMp'] = s['QMp'][:, :, inx]
-    for j in range(len(p['wp'])):
-        s['plumemeltrate'][j, :, :] = p['sid'] * s['QMp'][j, :, :] / (p['wp'][j] * s['H'])
-
+    
     # Shelf exchange
     s['QVs'] = s['QVs'][:, inx]
     s['QTs'] = s['QTs'][:, inx]
@@ -383,13 +310,22 @@ def get_final_output(p, t, s, status):
     s['QTv'] = s['QTv'][:, inx]
     s['QSv'] = s['QSv'][:, inx]
 
-    # Iceberg fluxes and melt rates
+    # Iceberg fluxes 
     s['QVi'] = s['QVi'][:, inx]
     s['QTi'] = s['QTi'][:, inx]
     s['QSi'] = s['QSi'][:, inx]
     s['QMi'] = s['QMi'][:, inx]
-    s['icebergmeltrate'] = p['sid'] * s['QMi'] / s['I']
-    s['icebergmeltrate'][s['I'] == 0] = 0  # Set to 0 where no icebergs
+    
+    # melt rates
+    s['plumemeltrate']   = np.zeros(s['QVp'].shape)
+    s['icebergmeltrate'] = np.zeros(s['QMi'].shape)
+    for k in range(len(s['t'])):
+        for j in range(len(p['wp'])):
+            s['plumemeltrate'][j, :, k] = p['sid'] * s['QMp'][j, :, k] / (p['wp'][j] * s['H'])
+
+        iceberg_meltrate = p['sid'] * s['QMi'][:,k] / s['I']
+        iceberg_meltrate[s['I'] == 0] = 0  # Set to 0 where no icebergs
+        s['icebergmeltrate'][:,k] = iceberg_meltrate
 
     # Subglacial discharge
     s['Qsg'] = s['Qsg'][:, inx]
@@ -408,6 +344,7 @@ def run_model(p, t, f, a):
     parameters structure p, time vector t, forcings structure f, initial
     conditions structure a, and returns solution structure s.
     """
+
     # Check for errors in the given inputs
     status = check_inputs(p, t, f, a)
 

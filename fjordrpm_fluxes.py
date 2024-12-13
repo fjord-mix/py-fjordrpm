@@ -7,6 +7,12 @@ Created on Tue Dec 10 17:26:32 2024
 """
 import numpy as np
 import plume_model as pl
+import warnings
+
+# we use that to supress division by zero warnings in get_mixing_fluxes and get_iceberg_fluxes
+def fxn():
+    warnings.warn("Runtime", RuntimeWarning)
+
 
 def get_plume_fluxes(i, p, s):
     """
@@ -130,7 +136,9 @@ def get_mixing_fluxes(i, p, s):
     - QTk0: Vertical heat fluxes (numpy array)
     - QSk0: Vertical salt fluxes (numpy array)
     """
-    
+    with warnings.catch_warnings(action="ignore"):
+        fxn()
+        
     # Extract necessary variables at timestep i
     H0 = s['H']
     T0 = s['T'][:, i]
@@ -143,7 +151,7 @@ def get_mixing_fluxes(i, p, s):
     gp = p['g'] * (p['betaS'] * (S0[1:] - S0[:-1]) - p['betaT'] * (T0[1:] - T0[:-1]))
     
     # Calculate horizontal velocity (u) from the volume fluxes
-    if s['QVp'].ndim == 2:
+    if s['QVp'].ndim > 2:
         u = (np.sum(s['QVp'][:, :, i], axis=0) - s['QVs'][:, i]) / (2 * p['W'] * H0)
     else:
         u = (s['QVp'][:, i] - s['QVs'][:, i]) / (2 * p['W'] * H0)
@@ -163,8 +171,8 @@ def get_mixing_fluxes(i, p, s):
     QT = 2 * p['W'] * p['L'] * Kz * (T0[1:] - T0[:-1]) / (H0[1:] + H0[:-1])
     
     # The final layer fluxes (QSk0, QTk0) are the net of the interface fluxes
-    QTk0 = np.concatenate(QT, [0]) - np.concatenate([0], QT)
-    QSk0 = np.concatenate(QS, [0]) - np.concatenate([0], QS)
+    QTk0 = np.concatenate((QT, [0]),axis=0) - np.concatenate(([0], QT),axis=0)
+    QSk0 = np.concatenate((QS, [0]),axis=0) - np.concatenate(([0], QS),axis=0)
 
     return QVk0, QTk0, QSk0
 
@@ -184,6 +192,8 @@ def get_iceberg_fluxes(i, p, s):
     - QSi0: Salt flux from icebergs (numpy array)
     - QMi0: Meltwater flux from icebergs (numpy array)
     """
+    with warnings.catch_warnings(action="ignore"):
+        fxn()
     
     # Extract necessary variables at timestep i
     H0 = s['H']
@@ -219,12 +229,12 @@ def get_iceberg_fluxes(i, p, s):
         Qentscaled = p['U0'] * fice * Qent
 
         # Compute the net volume, heat, and salt fluxes from upwelling
-        QVi0 = np.concatenate(([Qentscaled[1:], 0])) - np.concatenate(([0, Qentscaled[1:]]))
-        QTi0 = np.concatenate(([Qentscaled[1:] * T0[1:], 0])) - np.concatenate(([0, Qentscaled[1:] * T0[1:]]))
-        QSi0 = np.concatenate(([Qentscaled[1:] * S0[1:], 0])) - np.concatenate(([0, Qentscaled[1:] * S0[1:]]))
+        QVi0 = np.concatenate((Qentscaled[1:], [0]),axis=0) - np.concatenate(([0], Qentscaled[1:]),axis=0)
+        QTi0 = np.concatenate((Qentscaled[1:] * T0[1:], [0]),axis=0) - np.concatenate(([0], Qentscaled[1:] * T0[1:]),axis=0)
+        QSi0 = np.concatenate((Qentscaled[1:] * S0[1:], [0]),axis=0) - np.concatenate(([0], Qentscaled[1:] * S0[1:]),axis=0)
 
         # Add the meltwater contributions to the heat and salt fluxes
-        meltcont = np.concatenate(([fice[1:], 0])) * np.concatenate(([QMi0[1:], 0])) + (1 - fice) * QMi0
+        meltcont = np.concatenate((fice[1:], [0]),axis=0) * np.concatenate((QMi0[1:], [0]),axis=0) + (1 - fice) * QMi0
         QTi0 = QTi0 - meltcont * p['l'] / p['cw']
         QSi0 = QSi0 - meltcont * S0
 
@@ -263,9 +273,9 @@ def get_vertical_fluxes(i, s):
     QSint = np.where(QVint < 0, QVint * S0[:-1], QVint * S0[1:])
     
     # Final vertical fluxes (flux going in and out of each layer)
-    QVv0 = np.concatenate(([QVint, 0])) - np.concatenate(([0, QVint]))
-    QTv0 = np.concatenate(([QTint, 0])) - np.concatenate(([0, QTint]))
-    QSv0 = np.concatenate(([QSint, 0])) - np.concatenate(([0, QSint]))
+    QVv0 = np.concatenate((QVint, [0]),axis=0) - np.concatenate(([0], QVint),axis=0)
+    QTv0 = np.concatenate((QTint, [0]),axis=0) - np.concatenate(([0], QTint),axis=0)
+    QSv0 = np.concatenate((QSint, [0]),axis=0) - np.concatenate(([0], QSint),axis=0)
     
     return QVv0, QTv0, QSv0
 

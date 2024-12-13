@@ -10,8 +10,8 @@ Created on Thu Dec  5 10:56:11 2024
 import xarray as xr
 import numpy  as np
 import pandas as pd
-import feshie_utils as fut
-
+import fjordrpm_utils as fut
+from scipy.interpolate import interp1d
 
 class Parameters:
     
@@ -29,7 +29,7 @@ class Parameters:
         self.betaS  = config.betaS
         self.betaT  = config.betaT
         self.l      = config.l
-        self.cp     = config.cp
+        self.cw     = config.cw
         self.ci     = config.ci
         self.l1     = config.l1
         self.l2     = config.l2
@@ -52,6 +52,7 @@ class Parameters:
         self.Hsill  = config.Hsill
         self.W      = config.W    
         self.N      = config.N        
+        self.sill   = config.sill
         
         if self.Hsill >= self.H:
             self.sill = 0
@@ -83,6 +84,7 @@ class Parameters:
         '''returns all relevant attributes as a single dictionary'''
         p = {}
         p['A0']  = self.A0
+        p['C0']  = self.C0
         p['wp']  = self.wp
         p['K0']  = self.K0
         p['Kb']  = self.Kb
@@ -95,7 +97,7 @@ class Parameters:
         p['betaS']  = self.betaS 
         p['betaT']  = self.betaT 
         p['l']      = self.l     
-        p['cp']     = self.cp    
+        p['cw']     = self.cw
         p['ci']     = self.ci    
         p['l1']     = self.l1    
         p['l2']     = self.l2    
@@ -113,6 +115,7 @@ class Parameters:
         p['Hgl']    = self.Hgl   
         p['Hsill']  = self.Hsill 
         p['N']      = self.N     
+        p['sill']   = self.sill
         
         p['t_save']          = self.t_save
         p['run_plume_every'] = self.run_plume_every
@@ -154,6 +157,8 @@ class Forcings:
             else:
                 #TODO: throw error
                 return    
+            
+            
         return 
     
     def get_glacier_forcing(self,config):
@@ -215,11 +220,19 @@ class InitialState:
                 self.init_from_t0(object)    
                 object.print2log(f"Initial T,S conditions set as closest shelf conditions to {object.date_begin}")
 
-        self.H0 = np.ones([object.p.N,1]) * object.p.H/object.p.N
+        # Getting depths intervals for the fjord
+        self.H0 = np.ones([object.p.N,]) * object.p.H/object.p.N
         intervals = np.cumsum(self.H0)
         intervals = np.insert(intervals,0,0)
         intervals = (intervals[1:]+intervals[0:-1])/2
         self.z = intervals
+
+        self.T0 = self.T0.ffill(dim='depth')
+        self.S0 = self.S0.ffill(dim='depth')
+        # interpolate initial conditions to the fjord depths
+        self.T0 = np.interp(self.z, object.f.zs, self.T0)
+        self.S0 = np.interp(self.z, object.f.zs, self.S0)
+
         self.get_iceberg_forcing(object)
         object.print2log("Iceberg area profile set.")
         return
@@ -238,6 +251,8 @@ class InitialState:
         pass
     
     def get_iceberg_forcing(self,object):
+
+
         self.I0 = object.A0 * object.iceberg_fun(object.nu,object.Hgl,-self.z)
         return
 
