@@ -1,5 +1,6 @@
-# Ignore hidden/cached files
+# Ignore .nc files
 test_inputs/
+nc_examples/*.nc
 
 # Ignore old backup folders
 z_bkp*/
