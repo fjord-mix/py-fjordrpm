@@ -127,6 +127,7 @@ class Forcings:
     def get_shelf_forcing(self,config):
         ds = xr.open_dataset(config.shelf_forcing_file)
         # make changes to formatting to ensure the proper Ts and Ss structure
+        #isinstance(time_begin,pd.Timestamp)
         self.ts = pd.to_datetime(ds.time).to_julian_date()
         self.Ts = ds.thetao
         self.Ts['time'] = self.ts
@@ -251,9 +252,11 @@ class InitialState:
         pass
     
     def get_iceberg_forcing(self,object):
-
-
-        self.I0 = object.A0 * object.iceberg_fun(object.nu,object.Hgl,-self.z)
+        if object.config.iceberg_profile == 'exponential1':
+            iceprofile = object.iceberg_fun(object.nu,object.Hgl,-self.z)
+            self.I0 = (object.A0/np.sum(iceprofile))*iceprofile
+        else:
+            self.I0 = object.A0 * object.iceberg_fun(object.nu,object.Hgl,-self.z)
         return
 
     def to_dict(self):
