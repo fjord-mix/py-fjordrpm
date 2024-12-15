@@ -16,7 +16,9 @@ from fjordrpm_classes import Parameters, Forcings, InitialState
 
 def create_time_axis(object):
     t = np.arange(object.time_begin,object.time_end,object.dt_model)
-    return t
+    t_hp = np.linspace(object.time_begin, object.time_end,num=len(t),endpoint=False)
+    t_hp = np.concatenate((t_hp,[object.time_end]),axis=0)
+    return t_hp
 
 def load_inputs(object):    
     object.t = create_time_axis(object)

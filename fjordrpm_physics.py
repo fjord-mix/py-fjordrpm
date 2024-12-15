@@ -20,7 +20,6 @@ def check_inputs(p, t, f, a):
 
     # Check provided depths are positive
     if any(depth < 0 for depth in [p['Hsill'], p['H']]) or any(p['Hgl'] < 0):
-        #TODO: does this still hold if len(p['Hsill'] > 1?)
         status = 1
         raise ValueError('p.H, p.Hgl and p.Hsill must be positive')
 
@@ -291,6 +290,8 @@ def get_final_output(p, t, s, status):
     s['QTp'] = s['QTp'][:, :, inx]
     s['QSp'] = s['QSp'][:, :, inx]
     s['QMp'] = s['QMp'][:, :, inx]
+    s['QEp'] = s['QEp'][:, :, inx]
+    s['knb'] = s['knb'][:, inx]
     
     # Shelf exchange
     s['QVs'] = s['QVs'][:, inx]

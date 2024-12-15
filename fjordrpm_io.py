@@ -12,6 +12,8 @@ Created on Thu Dec  5 10:52:18 2024
 import os,sys
 import datetime as dt
 import pandas   as pd
+import xarray   as xr
+import numpy    as np
 import fjordrpm_utils as fut
 
 def tryread(object,category,parameter,reqtype,valid=None,allowconversion=True,checkfile=False,checkdir=False,default=None):
@@ -194,15 +196,12 @@ def parse_config(object):
 
     object.iceberg_profile = tryread(object,"Forcings","iceberg_profile",str,["exponential1","exponential2"])
     match object.iceberg_profile:
-        case 'exponential1':
-            #TODO: implement symbolic maths for this?  
+        case 'exponential1':  
             object.iceberg_fun = fut.iceberg_fun_exponential1
 
         case 'exponential2':
-            #TODO: implement symbolic maths for this?
             object.iceberg_fun = fut.iceberg_fun_exponential2
         case _:
-            #TODO: implement symbolic maths for this?
             object.iceberg_fun = fut.iceberg_fun_exponential1
 
     #Initialisation    
@@ -263,19 +262,55 @@ def parse_config(object):
     object.sid    = tryread(object,"Constants","sid",int,(0,1e20),default=86400)
     
     #Outputs
-    #object.output_dir = tryread(object,"Outputs","output_dir",str)
+    object.output_dir = tryread(object,"Outputs","output_dir",str)
 
 
     object.print2log("============= Finished reading config. All input correct =======")
     object.print2log("================================================================")
     return
 
-def save_out_nc(object): #TODO: implement saving routine (after model physics is translated?) 
+def save_out_nc(object):
     object.print2log(f"Saving outputs in {object.resultdir}...")  
-    #create_DataFrame
-    #add_outputs
-    #add_forcings
-    #add_geometry
-    #convert_time_axis_from_julian
-    #write_ds_to_disk
+    #create_DataFrame and add outputs
+    i_plumes = [i for i in range(len(object.p.Hgl))]
+    ds_out = xr.Dataset(coords=dict(plume=(['plume'],i_plumes),depth=(['depth'],object.s['z']),time=(['time'],object.s['t'])),
+                        attrs=dict(
+                            run_name=object.run_name,
+                            length=object.p.L,
+                            depth=object.p.H,
+                            width=object.p.W)
+                        )
+
+    # add all variables
+    for variable in object.s.keys():
+        if not variable in ds_out.keys():
+            # we do not need to store any other ints than already done as attributes, only arrays
+            if not type(object.s[variable]) == np.ndarray: 
+                continue
+            print(f"saving {variable}...\n")
+            if object.s[variable].ndim == 2:
+                if variable == 'knb' or variable == 'Qsg':
+                    ds_var = xr.DataArray(object.s[variable],coords={'plume':i_plumes,'time':object.s['t']})
+                else:
+                    ds_var = xr.DataArray(object.s[variable],coords={'depth':object.s['z'],'time':object.s['t']})
+            elif object.s[variable].ndim == 3:
+                ds_var = xr.DataArray(object.s[variable],coords={'plume':i_plumes,'depth':object.s['z'],'time':object.s['t']})
+            else: 
+                match variable:
+                    case 'I':
+                        ds_var = xr.DataArray(object.s[variable],coords={'depth':object.s['z']})
+                    case 'Hgl':
+                        ds_var = xr.DataArray(object.s[variable],coords={'plume':i_plumes})
+                    case 't':
+                        ds_var = xr.DataArray(object.s[variable],coords={'time':object.s['t']})
+                    case 'z':
+                        ds_var = xr.DataArray(object.s[variable],coords={'depth':object.s['z']})
+                    case _:
+                        pass
+            if 'ds_var' in locals():
+                ds_out[variable] = ds_var.copy()
+                del ds_var
+    #TODO: convert_time_axis_from_julian
+
+    ds_out.to_netcdf(object.rundir+'/outputs_'+object.run_name+'.nc')
     return
