@@ -1,36 +1,36 @@
 [Run]
-run_name = 'example4_combined'
+run_name = 'KangTest'
 
 [Time]
-time_begin = 2010-01-01 # datetime as YYYY-MM-DD
-time_end   = 2012-01-01 # datetime as YYYY-MM-DD
-dt_model   = 0.2  # model time step (days)
-dt_plume   = 0.2  # plume physics time step (days)
+time_begin = 2015-01-01 # datetime as YYYY-MM-DD
+time_end   = 2016-01-01 # datetime as YYYY-MM-DD
+dt_model   = 0.1  # model time step (days)
+dt_plume   = 0.5  # plume physics time step (days)
 dt_output  = 1.0 # time step to save outputs (days)
 
 [Forcings]
-shelf_forcing_file   = './nc_examples/example4_shelf_forcings.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
-glacier_forcing_file = './nc_examples/example4_glacier_forcings_np1.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
-iceberg_profile      = 'exponential1' # how to prescribe different formulas?
+shelf_forcing_file   = '/Users/mmeb1/Library/CloudStorage/OneDrive/data_common/greenland/FjordMIX/processed_data/coupling_tests/MP_shelf_kang.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
+glacier_forcing_file = '/Users/mmeb1/Library/CloudStorage/OneDrive/data_common/greenland/FjordMIX/processed_data/coupling_tests/Kangerlussuaq_Karlsson2023.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
+iceberg_profile      = 'exponential2' # how to prescribe different formulas?
 
 [Initialisation]
 start_mode   = 'init_from_t0' # {'init_from_t0','init_from_mean','restart_from_run'}
 restart_file = '' 
 
 [Geometry]
-fjord_length        = 60e3   # fjord length (m)
-fjord_width         = 6e3    # fjord width (m)
-fjord_depth         = 800.0  # fjord depth (m)
+fjord_length        = 91e3   # fjord length (m)
+fjord_width         = 9.4e3  # fjord width (m)
+fjord_depth         = 800.0 # fjord depth (m)
 fjord_gl_depth      = 800.0  # grounding line depth (m); will be superseeded if glacier_forcing_file includes grounding line
-fjord_sill_depth    = 400.0  # sill depth (m)
+fjord_sill_depth    = 600.0  # sill depth (m)
 fjord_has_sill      = true   # if set to false, fjord_sill_depth will be ignored
-fjord_n_layers      = 40     # how many layers we want the water column to have
+fjord_n_layers      = 60     # how many layers we want the water column to have
 type_hypsometry     = 'cuboid' #{'cuboid','idealised','read_from_file'}
 
 [Parameters]
 # tuneable model parameters
-iceberg_area_A0            = 1e8  # submerged iceberg area in the fjord (m^2)
-plume_width_wp             = 250.0  # widths of meltwater plumes (m)
+iceberg_area_A0            = 3e8  # submerged iceberg area in the fjord (m^2)
+plume_width_wp             = 150.0  # widths of meltwater plumes (m)
 shelf_exchange_C0          = 1e4  # shelf exchange efficiency (s)
 vertical_mixing_K0         = 5e-3 # vertical mixing scale (-)
 background_mixing_Kb       = 1e-5 # background vertical mixing (-)
