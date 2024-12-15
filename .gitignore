@@ -1,6 +1,6 @@
-# Ignore .nc files
+# Ignore outputs/.nc files
 test_inputs/
-nc_examples/*.nc
+*.nc
 
 # Ignore old backup folders
 z_bkp*/
