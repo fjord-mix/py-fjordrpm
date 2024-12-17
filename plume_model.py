@@ -99,7 +99,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
 
     # Loop over layers to compute plume dynamics
     k = kgl
-    while gp[k] > 0 and k < len(H0):
+    while gp[k] > 0 and k < len(H0)-1:
         # Advance the fluxes
         k += 1
         if k == kgl + 1:
