@@ -14,7 +14,7 @@ def iceberg_fun_exponential1(nu,hgl,z): # we take all 3 arguments for consistenc
     return np.exp(-z/100)
 
 def iceberg_fun_exponential2(nu,hgl,z):
-    return (nu/hgl)*np.exp(nu*z/hgl)/(1-np.exp(-nu))
+    return (nu/hgl)*np.exp(nu*-z/hgl)/(1-np.exp(-nu))
 
 #%% Functions for fjord hypsometry
 def hypsometry_idealised(width,z): #TODO: implement idealised hypsometry
