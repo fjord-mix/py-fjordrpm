@@ -14,9 +14,9 @@ import xarray     as xr
 import datetime   as dt
 import juliandate as jd
 # %% all needed paths
-path_nc = '/Volumes/ice-ocean-group/greenland_common/ocean/'
-path_out = '/Users/mmeb1/Library/CloudStorage/OneDrive/data_common/greenland/FjordMIX/processed_data/coupling_tests/'
-file_in = 'MP_0p25deg_ocn_grl_julian.nc'
+path_nc = '/Users/mmeb1/fjordrpm_coupling/nc_examples/'
+path_out = '/Users/mmeb1/fjordrpm_coupling/nc_examples/'
+file_in = 'MP_0p25deg_ocn_grl.nc'
 file_out = 'MP_shelf_kang.nc'
 
 # %% coordinates of the box for sampling
@@ -29,9 +29,9 @@ lon2 = -29.5
 ds_in = xr.open_dataset(path_nc+file_in)
 ds_sel = ds_in.sel(latitude=slice(lat1,lat2),longitude=slice(lon1,lon2)).mean(dim=['latitude','longitude'])
 
-time_gregorian = [dt.datetime(*jd.to_gregorian(t)) for t in ds_sel.time]
+#time_gregorian = [dt.datetime(*jd.to_gregorian(t)) for t in ds_sel.time]
 
 ds_out = ds_sel.transpose()
-ds_out['time'] = time_gregorian
+#ds_out['time'] = time_gregorian
 # %% saving (time,depth) NetCDF
 ds_out.to_netcdf(path_out+file_out)
