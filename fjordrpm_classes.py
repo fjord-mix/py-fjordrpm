@@ -252,11 +252,11 @@ class InitialState:
         pass
     
     def get_iceberg_forcing(self,object):
-        if object.config.iceberg_profile == 'exponential1':
-            iceprofile = object.iceberg_fun(object.nu,object.Hgl,-self.z)
+        if object.iceberg_profile == 'exponential1':
+            iceprofile = object.iceberg_fun(object.nu,object.Hgl,self.z)
             self.I0 = (object.A0/np.sum(iceprofile))*iceprofile
         else:
-            self.I0 = object.A0 * object.iceberg_fun(object.nu,object.Hgl,-self.z)
+            self.I0 = object.A0 * object.iceberg_fun(object.nu,object.Hgl,self.z)
         return
 
     def to_dict(self):
