@@ -17,7 +17,8 @@ ds_final_renamed=ds.rename_vars({'thetao_mean':'thetao','so_mean':'so'}) # renam
 ds_final_renamed.to_netcdf("./MP_0p25deg_ocn_grl.nc")
 
 # probably not needed! Remaps to a more manageable grid type for subsetting later
-print("Remapping data...")
-os.system("cdo remapbil,r1440x720 ./MP_0p25deg_ocn_grl.nc ./MP_0p25deg_ocn_grl_remap.nc")
-os.system("rm ./MP_0p25deg_ocn_grl.nc")
-os.system("mv /MP_0p25deg_ocn_grl_julian_remap.nc ./MP_0p25deg_ocn_grl.nc")
+#print("Remapping data...")
+#os.system("cdo remapbil,r1440x720 ./MP_0p25deg_ocn_grl.nc ./MP_0p25deg_ocn_grl_remap.nc")
+#os.system("cdo remapbil,r720x360 ./MP_0p25deg_ocn_grl.nc ./MP_0p25deg_ocn_grl_remap.nc")
+#os.system("rm ./MP_0p25deg_ocn_grl.nc")
+#os.system("mv ./MP_0p25deg_ocn_grl_remap.nc ./MP_0p25deg_ocn_grl.nc")
