@@ -1,0 +1,66 @@
+[Run]
+run_name = 'example_restart_from2'
+
+[Time]
+time_begin = 2010-01-01 # datetime as YYYY-MM-DD
+time_end   = 2010-04-11 # datetime as YYYY-MM-DD
+dt_model   = 0.2  # model time step (days)
+dt_plume   = 0.2  # plume physics time step (days)
+dt_output  = 1.0 # time step to save outputs (days)
+
+[Forcings]
+shelf_forcing_file   = './examples/nc_forcings/example2_shelf_forcings.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
+glacier_forcing_file = './examples/nc_forcings/example2_glacier_forcings_np1.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
+iceberg_profile      = 'exponential1' # how to prescribe different formulas?
+
+[Initialisation]
+start_mode   = 'restart_from_run' # {'init_from_t0','init_from_mean','restart_from_run'}
+restart_file = './outputs/example2_intermediary_days/outputs_example2_intermediary.nc' 
+
+[Geometry]
+fjord_length        = 60e3   # fjord length (m)
+fjord_width         = 6e3    # fjord width (m)
+fjord_depth         = 800.0  # fjord depth (m)
+fjord_gl_depth      = 800.0  # grounding line depth (m); will be superseeded if glacier_forcing_file includes grounding line
+fjord_sill_depth    = 400.0  # sill depth (m)
+fjord_has_sill      = true   # if set to false, fjord_sill_depth will be ignored
+fjord_n_layers      = 40     # how many layers we want the water column to have
+type_hypsometry     = 'cuboid' #{'cuboid','idealised','read_from_file'}
+
+[Parameters]
+# tuneable model parameters
+iceberg_area_A0            = 2e8  # submerged iceberg area in the fjord (m^2)
+plume_width_wp             = 250.0  # widths of meltwater plumes (m)
+shelf_exchange_C0          = 1e5  # shelf exchange efficiency (s)
+vertical_mixing_K0         = 5e-3 # vertical mixing scale (-)
+background_mixing_Kb       = 1e-6 # background vertical mixing (-)
+richardson_mixing_Ri0      = 0.7  # Richardson number dependency of mixing (-)
+iceberg_melt_M0            = 0.0 # iceberg melt efficiency (m s^-1 degC^-1)
+iceberg_upwelling_scale_U0 = 1.0  # iceberg-driven upwelling scale (-)
+iceberg_decay_scale_nu0    = 25.0 # how fast the exponential iceberg profile decays with depth
+
+[Constants]
+# Physical parameters
+g      = 9.81     # gravity (ms^-2)
+betaS  = 7.86e-4  # haline contraction (ppt^-1)
+betaT  = 3.87e-5  # thermal expansion (degC^-1)
+l      = 3.35e5   # latent heat (J kg^-1)
+cw     = 3974.0   # water heat capacity (J kg^-1 degC^-1)
+ci     = 2009.0   # ice heat capacity (J kg^-1 degC^-1)
+l1     = -5.73e-2 # dependence of freezing point on salinity (degC ppt^-1)
+l2     = 8.32e-2  # freezing point offset (degC)
+l3     = -7.61e-4 # dependence of freezing point on depth (degC m^-1)
+GT     = 2.2e-2   # thermal transfer coefficient (-)
+GS     = 6.2e-4   # saline transfer coefficient (-)
+Cd     = 2.5e-3   # drag coefficient (-)
+Ti     = -10.0    # ice temperature (degC)
+alphai = 0.1      # iceberg plume entrainment coefficient (-)
+alphap = 0.1      # discharge plume entrainment coefficient (-)
+sid    = 86400    # seconds in a day (useful to have)
+
+
+[Outputs]
+output_dir    = './outputs/' # directory where outputs will be saved
+time_in_cal   = true      # .nc time axis will be in calendar time as opposed to days since the start
+force_new_dir = true
+log_file      = 'log.txt'

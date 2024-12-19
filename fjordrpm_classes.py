@@ -217,7 +217,7 @@ class InitialState:
                 self.init_from_avg(object)
                 object.print2log(f"Initial T,S conditions set as mean shelf conditions between {object.date_begin} and {object.date_end}")
             case 'restart_from_run':
-                self.init_from_restart(object.config)
+                self.init_from_restart(object)
                 object.print2log("Initial T,S conditions set from a previous simulation:")
                 object.print2log(f"{object.restart_file}")
             case _:
@@ -251,8 +251,19 @@ class InitialState:
         self.S0 = object.f.Ss.sel(time=slice(fut.nearest(object.f.ts,object.time_begin),fut.nearest(object.f.ts,object.time_end))).mean(dim='time',skipna=True)
         return
     
-    def init_from_restart(self,config): #TODO:implement restart option in config_file
-        pass
+    def init_from_restart(self,object):
+        ds_in = xr.open_dataset(object.restart_file)
+        zs = object.f.zs
+        z0 = ds_in['depth']
+        
+        # the initial conditions require T0 and S0 to be in the same axis as the shelf forcing
+        T0 = np.interp(zs,z0,ds_in.T[:,-1]) 
+        S0 = np.interp(zs,z0,ds_in.S[:,-1])
+        
+        self.T0 = xr.DataArray(T0,coords={'depth':zs})
+        self.S0 = xr.DataArray(S0,coords={'depth':zs})
+        return
+        
     
     def get_iceberg_forcing(self,object):
         if object.iceberg_profile == 'exponential1':

@@ -209,6 +209,9 @@ def parse_config(object):
     #Initialisation    
     object.start_mode   = tryread(object,"Initialisation","start_mode",str,['init_from_t0','init_from_mean','restart_from_run'])
     object.restart_file = tryread(object,"Initialisation","restart_file",str,checkfile=False,default='')
+    if object.restart_file == '' and object.start_mode == 'restart_from_run':
+        object.print2log('No restart file provided for restarting run! Aborting...')
+        raise RuntimeError("No restart file specified!")
 
     #Geometry
     object.L          = tryread(object,"Geometry","fjord_length",float,(0,1e20))
