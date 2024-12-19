@@ -11,7 +11,7 @@ import xarray as xr
 #import matplotlib.pyplot as plt
 #import datetime as dt
 
-example_number = 3
+example_number = 4
 
 # depth vector for shelf forcing
 zs = np.linspace(0,800,801) # 1m resolution
@@ -84,6 +84,7 @@ match example_number:
         Ttop    = 0 #temperature at top
         tw      = 10 # period of oscillation (days)
         zi      = 50+(30/2)*np.sin(2*np.pi*ts/tw) # 'pycnocline' oscillation
+        zi[(ts % 365 > 120) & (ts % 365 < 280)] = 50
         t_shelf = np.zeros([len(zs),len(ts)])
         s_shelf = np.zeros([len(zs),len(ts)])
         for k in range(len(ts)):
