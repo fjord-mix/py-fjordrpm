@@ -1,5 +1,5 @@
 # Ignore outputs/.nc files
-test_inputs/
+outputs/
 *.nc
 
 # Ignore old backup folders
