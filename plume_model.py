@@ -63,7 +63,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     Ta = np.flipud(T0)
     Sa = np.flipud(S0)
     H0 = np.flipud(H0)
-    kgl = len(H0) - kgl  # Adjust grounding line index
+    kgl = len(H0)-1 - kgl  # Adjust grounding line index
     mdot,Tb,Sb = [np.zeros(len(H0)) for _ in range(3)]
 
     # Initialise output variables
@@ -74,8 +74,8 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     Tp = np.zeros(len(H0))
     Sp = np.zeros(len(H0))
     gp = np.zeros(len(H0))
-    b = np.zeros(len(H0))
-    u = np.zeros(len(H0))
+    b = np.zeros(len(H0)) 
+    u = np.zeros(len(H0)) 
     edot = np.zeros(len(H0))
     QV = np.zeros(len(H0))
     QM = np.zeros(len(H0))
@@ -93,8 +93,6 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     QM[kgl] = u[kgl]**2 * b[kgl]
     QT[kgl] = b[kgl] * u[kgl] * Tp[kgl]
     QS[kgl] = b[kgl] * u[kgl] * Sp[kgl]
-
-    # Call meltrate for the first layer
     mdot[kgl], Tb[kgl], Sb[kgl] = meltrate(p, u[kgl], Tp[kgl], Sp[kgl], p['Hgl'][j])
 
     # Loop over layers to compute plume dynamics
@@ -103,7 +101,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
         # Advance the fluxes
         k += 1
         if k == kgl + 1:
-            dz = p['Hgl'][j] - (p['H'] - np.sum(H0[:kgl]))
+            dz = p['Hgl'][j] - (p['H'] - np.sum(H0[:kgl+1]))
         else:
             dz = H0[k - 1]
 
@@ -128,7 +126,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     Qmelt = np.flipud(Qmelt) * p['wp'][j]
 
     # Find the neutral buoyancy index
-    knb = len(H0) - len(gp) + 1
+    knb = len(H0) - len(gp[gp != 0]) #
 
     return Qent, Qmelt, knb
 

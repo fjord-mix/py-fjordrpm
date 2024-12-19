@@ -23,13 +23,13 @@ fjord_width         = 6e3    # fjord width (m)
 fjord_depth         = 800.0  # fjord depth (m)
 fjord_gl_depth      = 800.0  # grounding line depth (m); will be superseeded if glacier_forcing_file includes grounding line
 fjord_sill_depth    = 400.0  # sill depth (m)
-fjord_has_sill      = true   # if set to false, fjord_sill_depth will be ignored
+fjord_has_sill      = false   # if set to false, fjord_sill_depth will be ignored
 fjord_n_layers      = 40     # how many layers we want the water column to have
 type_hypsometry     = 'cuboid' #{'cuboid','idealised','read_from_file'}
 
 [Parameters]
 # tuneable model parameters
-iceberg_area_A0            = 1e8  # submerged iceberg area in the fjord (m^2)
+iceberg_area_A0            = 2e8  # submerged iceberg area in the fjord (m^2)
 plume_width_wp             = 250.0  # widths of meltwater plumes (m)
 shelf_exchange_C0          = 1e5  # shelf exchange efficiency (s)
 vertical_mixing_K0         = 5e-3 # vertical mixing scale (-)

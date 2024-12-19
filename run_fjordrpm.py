@@ -21,6 +21,6 @@ from fjordrpm import FjordRPM
 #assert sys.argv[1][-4:] == 'toml' , f"config file should be .toml"
 
 #fjord_run = Feshie(sys.argv[1])
-fjord_run = FjordRPM('examples/config_example_KangTest.toml')
-#fjord_run = FjordRPM('examples/config_example1.toml')
+#fjord_run = FjordRPM('examples/config_example_KangTest.toml')
+fjord_run = FjordRPM('examples/config_example3.toml')
 fjord_run.run_fjord()

@@ -29,13 +29,13 @@ type_hypsometry     = 'cuboid' #{'cuboid','idealised','read_from_file'}
 
 [Parameters]
 # tuneable model parameters
-iceberg_area_A0            = 1e8  # submerged iceberg area in the fjord (m^2)
+iceberg_area_A0            = 2e8  # submerged iceberg area in the fjord (m^2)
 plume_width_wp             = 250.0  # widths of meltwater plumes (m)
 shelf_exchange_C0          = 1e5  # shelf exchange efficiency (s)
 vertical_mixing_K0         = 5e-3 # vertical mixing scale (-)
 background_mixing_Kb       = 1e-6 # background vertical mixing (-)
 richardson_mixing_Ri0      = 0.7  # Richardson number dependency of mixing (-)
-iceberg_melt_M0            = 5e-7 # iceberg melt efficiency (m s^-1 degC^-1)
+iceberg_melt_M0            = 0.0 # iceberg melt efficiency (m s^-1 degC^-1)
 iceberg_upwelling_scale_U0 = 1.0  # iceberg-driven upwelling scale (-)
 iceberg_decay_scale_nu0    = 25.0 # how fast the exponential iceberg profile decays with depth
 

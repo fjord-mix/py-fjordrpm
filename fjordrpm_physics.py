@@ -95,7 +95,7 @@ def initialise_variables(p, t, f, a):
         [np.zeros((num_plumes, p['N'], len(t))) for _ in range(5)]
 
     # Fields with dimensions num plumes x length(t)
-    s['knb'] = np.zeros((num_plumes, len(t)),dtype=int)
+    s['knb'] = np.zeros((num_plumes, len(t)),dtype=int) * np.nan
     s['Qsg'] = np.zeros((num_plumes, len(t)))
 
     # Initialise layer depths 
@@ -120,7 +120,7 @@ def initialise_variables(p, t, f, a):
         s['ksill'] = Nabove
     else:
         s['H'] = a['H0']
-        s['ksill'] = p['N']
+        s['ksill'] = p['N']-1
 
     # Initialise layer volumes
     s['V'] = s['H'] * p['W'] * p['L']
@@ -324,7 +324,8 @@ def get_final_output(p, t, s, status):
         for j in range(len(p['wp'])):
             s['plumemeltrate'][j, :, k] = p['sid'] * s['QMp'][j, :, k] / (p['wp'][j] * s['H'])
 
-        iceberg_meltrate = p['sid'] * s['QMi'][:,k] / s['I']
+        with np.errstate(divide='ignore',invalid='ignore'): # we handle this possible division by zero down below
+            iceberg_meltrate = p['sid'] * s['QMi'][:,k] / s['I']
         iceberg_meltrate[s['I'] == 0] = 0  # Set to 0 where no icebergs
         s['icebergmeltrate'][:,k] = iceberg_meltrate
 

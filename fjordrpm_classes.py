@@ -42,7 +42,10 @@ class Parameters:
         self.alphap = config.alphap
         self.sid    = config.sid
         
-        self.t_save          = np.arange(config.time_begin,config.time_end,config.dt_out)
+        t_save          = np.arange(config.time_begin,config.time_end,config.dt_out)
+        t_save_ep = np.linspace(config.time_begin, config.time_end,num=len(t_save),endpoint=False)
+        t_save_ep = np.concatenate((t_save_ep,[config.time_end]),axis=0)
+        self.t_save = t_save_ep
         self.run_plume_every = np.floor(config.dt_model/config.dt_plume)
         
         # geometry attributes

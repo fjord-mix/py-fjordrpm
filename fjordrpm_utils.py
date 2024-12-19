@@ -7,7 +7,7 @@ Created on Fri Dec  6 16:08:35 2024
 @author: mmeb1
 """
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, PchipInterpolator
 
 #%% Functions for different iceberg area profiles wrt depth
 def iceberg_fun_exponential1(nu,hgl,z): # we take all 3 arguments for consistency when assigning function to an object attribute
@@ -51,6 +51,7 @@ def bin_forcings(f, H, t):
     f['Ts'] = f['Ts'].ffill(dim='depth')
     f['Ss'] = f['Ss'].ffill(dim='depth')
     #f['zs'] = f['Ts'].depth
+    #f['Ts'] = f['Ts'].dropna()
 
     # First, put shelf forcing on model layers
     # Add the layer boundaries H0 into the vector of shelf z-values
@@ -60,6 +61,10 @@ def bin_forcings(f, H, t):
     T0 = np.zeros((len(z0), len(f['ts'])))  # Assuming f['Ts'] has multiple time steps
     S0 = np.zeros((len(z0), len(f['ts'])))
     for k in range(len(f['ts'])):
+        #T0_interp = PchipInterpolator(f['zs'], f['Ts'][:,k],extrapolate=True)
+        #S0_interp = PchipInterpolator(f['zs'], f['Ss'][:,k],extrapolate=True)
+        #T0 = T0_interp(z0)
+        #S0 = S0_interp(z0)
         T0[:,k] = np.interp(z0,f['zs'],f['Ts'][:,k])
         S0[:,k] = np.interp(z0,f['zs'],f['Ss'][:,k])
 
@@ -69,7 +74,7 @@ def bin_forcings(f, H, t):
     Sz = np.zeros((len(H), len(f['ts'])))  # Assuming f['Ts'] has multiple time steps
     Tz = np.zeros((len(H), len(f['ts'])))
     
-    for k in range(len(ints) - 2):
+    for k in range(len(ints) - 1):
         # Find the boundaries of the layer in the shelf grid z0
         inds = np.where((z0 >= ints[k]) & (z0 <= ints[k + 1]))[0]
         # Average the temperature and salinity profiles over this layer

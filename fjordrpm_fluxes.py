@@ -7,12 +7,6 @@ Created on Tue Dec 10 17:26:32 2024
 """
 import numpy as np
 import plume_model as pl
-import warnings
-
-# we use that to supress division by zero warnings in get_mixing_fluxes and get_iceberg_fluxes
-def fxn():
-    warnings.warn("Runtime", RuntimeWarning)
-
 
 def get_plume_fluxes(i, p, s):
     """
@@ -28,6 +22,7 @@ def get_plume_fluxes(i, p, s):
     - QEp0, QMp0: Entrainment and melt fluxes for each plume at timestep i
     - knb0: Neutral buoyancy layer index for each plume at timestep i
     """
+    
     # Get tracer variables at timestep i
     H0 = s['H']
     T0 = s['T'][:, i]
@@ -42,6 +37,7 @@ def get_plume_fluxes(i, p, s):
         # Get subglacial discharge at timestep i
         Qsg0 = s['Qsg'][j, i]
         kgl = s['kgl'][j]
+        
 
         if Qsg0 != 0:  # If there is a plume
             # Plume dynamics
@@ -53,22 +49,22 @@ def get_plume_fluxes(i, p, s):
                 knb = s['knb'][j, i - 1]
 
             # Compute fluxes in layers from grounding line to neutral buoyancy
-            QVp0[j, knb:kgl] = -Qent[knb:kgl]
-            QTp0[j, knb:kgl] = QVp0[j, knb:kgl] * T0[knb:kgl]
-            QSp0[j, knb:kgl] = QVp0[j, knb:kgl] * S0[knb:kgl]
+            QVp0[j, knb+1:kgl+1] = -Qent[knb+1:kgl+1]
+            QTp0[j, knb+1:kgl+1] = QVp0[j, knb+1:kgl+1] * T0[knb+1:kgl+1]
+            QSp0[j, knb+1:kgl+1] = QVp0[j, knb+1:kgl+1] * S0[knb+1:kgl+1]
 
             # Compute fluxes into the neutral buoyancy layer
             Tsg0 = p['l2'] + p['l3'] * p['Hgl'][j]
             Teff = -p['l'] / p['cw']
-            QVp0[j, knb] = Qsg0 + np.sum(Qmelt[knb:kgl]) - np.sum(QVp0[j, knb:kgl])
-            QTp0[j, knb] = Qsg0 * Tsg0 + np.sum(Qmelt[knb:kgl]) * Teff - np.sum(QTp0[j, knb:kgl])
-            QSp0[j, knb] = -np.sum(QSp0[j, knb:kgl])
+            QVp0[j, knb] = Qsg0 + np.sum(Qmelt[knb+1:kgl+1]) - np.sum(QVp0[j, knb+1:kgl+1])
+            QTp0[j, knb] = Qsg0 * Tsg0 + np.sum(Qmelt[knb+1:kgl+1]) * Teff - np.sum(QTp0[j, knb+1:kgl+1])
+            QSp0[j, knb] = -np.sum(QSp0[j, knb+1:kgl+1])
 
             # Store entrainment, submarine melt flux, and neutral buoyancy
             QEp0[j, :] = Qent
             QMp0[j, :] = Qmelt
             knb0[j] = knb
-
+            
     return QVp0, QTp0, QSp0, QEp0, QMp0, knb0
 
 
@@ -87,7 +83,6 @@ def get_shelf_fluxes(i, p, s):
     - QSs0: Shelf salt fluxes (numpy array)
     - phi0: Potential energy across layers (numpy array)
     """
-    
     # Get tracer variables at timestep i
     H0 = s['H']
     T0 = s['T'][:, i]
@@ -108,12 +103,12 @@ def get_shelf_fluxes(i, p, s):
     for k in range(1, s['ksill']):
         phi0[k] = phi0[k - 1] + gp[k - 1] * H0[k - 1] / 2 + gp[k] * H0[k] / 2
 
-    # Compute the above-sill fluxes before barotropic compensation (zero if C0=0)
-    Q = p['C0'] * p['W'] * H0[:s['ksill']] * phi0[:s['ksill']] / p['L']
+    Q = p['C0'] * p['W'] * H0[:s['ksill']] * phi0[:s['ksill']] / p['L']  # Compute the above-sill fluxes
+    fw_flux = np.sum(s['Qsg'][:, i]) + np.sum(s['QMp'][:, :, i])         # Compute the freshwater fluxes
 
     # Compute the above-sill fluxes after barotropic compensation
-    total_flux = np.sum(s['Qsg'][:, i]) + np.sum(s['QMp'][:, :, i])
-    QVs0[:s['ksill']] = Q - H0[:s['ksill']] * (total_flux + np.sum(Q)) / np.sum(H0[:s['ksill']])
+    QVs0[:s['ksill']] = Q - H0[:s['ksill']] * (fw_flux + np.sum(Q)) / np.sum(H0[:s['ksill']])
+
 
     # Compute the resulting heat and salt fluxes
     QTs0 = np.where(QVs0 >= 0, QVs0 * Ts0, QVs0 * T0)
@@ -136,9 +131,6 @@ def get_mixing_fluxes(i, p, s):
     - QTk0: Vertical heat fluxes (numpy array)
     - QSk0: Vertical salt fluxes (numpy array)
     """
-    with warnings.catch_warnings(action="ignore"):
-        fxn()
-        
     # Extract necessary variables at timestep i
     H0 = s['H']
     T0 = s['T'][:, i]
@@ -158,6 +150,9 @@ def get_mixing_fluxes(i, p, s):
     
     # Compute the Richardson number (Ri)
     du = u[1:] - u[:-1]
+    
+    
+    du[du==0] = 1e-9 # preventing a division by zero, Ri will be capped to Ri0 further down
     Ri = gp * (H0[1:] + H0[:-1]) / (2 * du**2)
     Ri[du == 0] = p['Ri0']
     Ri[Ri > p['Ri0']] = p['Ri0']
@@ -192,9 +187,6 @@ def get_iceberg_fluxes(i, p, s):
     - QSi0: Salt flux from icebergs (numpy array)
     - QMi0: Meltwater flux from icebergs (numpy array)
     """
-    with warnings.catch_warnings(action="ignore"):
-        fxn()
-    
     # Extract necessary variables at timestep i
     H0 = s['H']
     T0 = s['T'][:, i]
@@ -215,13 +207,15 @@ def get_iceberg_fluxes(i, p, s):
         # Compute velocity scale and entrainment into upwelling
         Teff = -p['l'] / p['cw']  # Effective temperature of meltwater
         gmelt = p['g'] * (p['betaS'] * S0 - p['betaT'] * (T0 - Teff))  # Buoyancy difference
-        vel = (QMi0 * gmelt * H0 / (p['alphai'] * I0))**(1/3)
+        with np.errstate(divide='ignore',invalid='ignore'): # we know that I0 can be zero, as this is handled further down
+            vel = (QMi0 * gmelt * H0 / (p['alphai'] * I0))**(1/3)
         vel[(I0 == 0) | (gmelt <= 0)] = 0
         Qent = p['alphai'] * vel * I0
 
         # Compute length scale and fraction for upwelling
         gk = np.maximum(0, p['g'] * (p['betaS'] * (S0[1:] - S0[:-1]) - p['betaT'] * (T0[1:] - T0[:-1])))
-        lice = (vel[1:]**2 / H0[1:]) * (H0[:-1] + H0[1:]) / gk
+        with np.errstate(divide='ignore',invalid='ignore'): # we know that gk can be zero, as this is handled further down
+            lice = (vel[1:]**2 / H0[1:]) * (H0[:-1] + H0[1:]) / gk
         lice[vel[1:] == 0] = 0
         fice = np.concatenate(([0], np.minimum(1, lice / H0[1:])))
 

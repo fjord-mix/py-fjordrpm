@@ -14,7 +14,7 @@ import xarray as xr
 example_number = 3
 
 # depth vector for shelf forcing
-zs = np.linspace(0,800,40)
+zs = np.linspace(0,800,801) # 1m resolution
 
 
 # time vector for forcings
