@@ -11,7 +11,7 @@ Created on Thu Dec  5 10:50:43 2024
 import tomli
 import fjordrpm_setup   as fst
 import fjordrpm_io      as fio
-import fjordrpm_physics as fph
+import fjordrpm_core  as fc
 from   time           import process_time
 
 class FjordRPM():
@@ -28,7 +28,7 @@ class FjordRPM():
         
     def run_fjord(self):
         self.print2log(f"Starting model run {self.run_name}...")
-        self.s = fph.run_model(self.p.to_dict(),self.t,self.f.to_dict(),self.a.to_dict())
+        self.s = fc.run_model(self.p.to_dict(),self.t,self.f.to_dict(),self.a.to_dict())
         self.print2log("Simulation complete.")
         fio.save_out_nc(self)
         self.print2log("Output saving complete.")
