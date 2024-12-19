@@ -120,7 +120,7 @@ def initialise_variables(p, t, f, a):
         s['ksill'] = Nabove
     else:
         s['H'] = a['H0']
-        s['ksill'] = p['N']-1
+        s['ksill'] = p['N']
 
     # Initialise layer volumes
     s['V'] = s['H'] * p['W'] * p['L']
