@@ -11,10 +11,12 @@ Created on Thu Dec  5 10:52:18 2024
 """
 import os,sys
 import datetime as dt
+import juliandate as jd
 import pandas   as pd
 import xarray   as xr
 import numpy    as np
 import fjordrpm_utils as fut
+
 
 def tryread(object,category,parameter,reqtype,valid=None,allowconversion=True,checkfile=False,checkdir=False,default=None):
     """
@@ -263,9 +265,9 @@ def parse_config(object):
     
     #Outputs
     object.output_dir = tryread(object,"Outputs","output_dir",str)
+    object.t_out_in_cal = tryread(object,"Outputs","time_in_cal",bool,default=False)
 
-
-    object.print2log("============= Finished reading config. All input correct =======")
+    object.print2log("============ Finished reading config. All inputs correct =======")
     object.print2log("================================================================")
     return
 
@@ -287,7 +289,6 @@ def save_out_nc(object):
             # we do not need to store any other ints than already done as attributes, only arrays
             if not type(object.s[variable]) == np.ndarray: 
                 continue
-            print(f"saving {variable}...\n")
             if object.s[variable].ndim == 2:
                 if variable == 'knb' or variable == 'Qsg':
                     ds_var = xr.DataArray(object.s[variable],coords={'plume':i_plumes,'time':object.s['t']})
@@ -310,7 +311,16 @@ def save_out_nc(object):
             if 'ds_var' in locals():
                 ds_out[variable] = ds_var.copy()
                 del ds_var
-    #TODO: convert_time_axis_from_julian
+    
+    t_out = ds_out['time'].values - ds_out['time'][0].values
+    if object.t_out_in_cal:
+        time_begin = pd.to_datetime(dt.datetime(*jd.to_gregorian(ds_out['time'][0])))
+        time_axis = [time_begin + pd.Timedelta(days=d) for d in t_out]
+        ds_out['time'] = time_axis
+        object.print2log("Time axis saved as calendar days (based on prescribed begin and end times).")
+    else:
+        ds_out['time'] = t_out
+        object.print2log("Time axis saved as (simulated) days")
 
     ds_out.to_netcdf(object.rundir+'/outputs_'+object.run_name+'.nc')
     return

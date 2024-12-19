@@ -61,5 +61,6 @@ sid    = 86400    # seconds in a day (useful to have)
 
 [Outputs]
 output_dir    = './test_inputs/' # directory where outputs will be saved
+time_in_cal   = true      # .nc time axis will be in calendar time as opposed to days since the start
 force_new_dir = true
 log_file      = 'log.txt'
