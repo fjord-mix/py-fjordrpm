@@ -9,8 +9,8 @@ dt_plume   = 0.2  # plume physics time step (days)
 dt_output  = 1.0 # time step to save outputs (days)
 
 [Forcings]
-shelf_forcing_file   = './nc_examples/example3_shelf_forcings.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
-glacier_forcing_file = './nc_examples/example3_glacier_forcings_np1.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
+shelf_forcing_file   = './examples/nc_forcings/example3_shelf_forcings.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
+glacier_forcing_file = './examples/nc_forcings/example3_glacier_forcings_np1.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
 iceberg_profile      = 'exponential1' # how to prescribe different formulas?
 
 [Initialisation]
