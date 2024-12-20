@@ -59,7 +59,7 @@ class Parameters:
         
         if self.Hsill >= self.H:
             self.sill = 0
-      
+                  
         return
     
     # Hsill might need updates if glacier NetCDF has n_plumes grounding-line depths
@@ -76,7 +76,9 @@ class Parameters:
 
     def set_hypsometry(self,object,z):
         if hasattr(object,'hypsometry_fun'):
-            self.W = object.config.hypsometry_fun(z)
+            W_z = object.hypsometry_fun(self.W,self.H,z)
+            self.W = W_z
+            
         elif hasattr(object,'hypsometry_file'):
             ds_hyp = xr.open_dataset(object.object.hypsometry_file)
             self.W = np.interp(z,ds_hyp.depth,ds_hyp.width)

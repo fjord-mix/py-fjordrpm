@@ -219,7 +219,7 @@ def parse_config(object):
     object.H          = tryread(object,"Geometry","fjord_depth",float,(0,1e20))
     object.Hgl        = tryread(object,"Geometry","fjord_gl_depth",float,(0,1e20))
     object.Hsill      = tryread(object,"Geometry","fjord_sill_depth",float,(0,1e20))
-    object.hypsometry = tryread(object,"Geometry","type_hypsometry",str,['cuboid','formula','read_from_file'])
+    object.hypsometry = tryread(object,"Geometry","type_hypsometry",str,['cuboid','idealised','read_from_file'])
     object.N          = tryread(object,"Geometry","fjord_n_layers",int,(0,1e20))
     object.sill       = tryread(object,"Geometry","fjord_has_sill",bool,default=True)
     
@@ -228,8 +228,7 @@ def parse_config(object):
             pass # nothing to do
         case 'idealised':
             object.hypsometry_fun = fut.hypsometry_idealised
-            #TODO: implement idealised function?
-            pass
+
         case 'read_from_file':
             object.hypsometry_file = tryread(object,"Geometry","hypsometry_file",str,checkfile=False,default='')
             pass
