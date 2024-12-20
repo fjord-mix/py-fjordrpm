@@ -17,8 +17,10 @@ def iceberg_fun_exponential2(nu,hgl,z):
     return (nu/hgl)*np.exp(nu*-z/hgl)/(1-np.exp(-nu))
 
 #%% Functions for fjord hypsometry
-def hypsometry_idealised(width,z): #TODO: implement idealised hypsometry
-    pass
+def hypsometry_idealised(width,max_depth,z,a=1,b=10): 
+    # Hypsometry function based on U-shaped valley idealised profiles of Harbor et al. (1992)
+    w = width-width*((z/a)**b)/(max_depth**b)
+    return w
 
 #%% Other miscellaneous functions
 # quick function to find nearest point, especially useful for the time axis

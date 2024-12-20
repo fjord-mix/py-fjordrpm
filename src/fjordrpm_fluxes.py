@@ -103,7 +103,12 @@ def get_shelf_fluxes(i, p, s):
     for k in range(1, s['ksill']):
         phi0[k] = phi0[k - 1] + gp[k - 1] * H0[k - 1] / 2 + gp[k] * H0[k] / 2
 
-    Q = p['C0'] * p['W'] * H0[:s['ksill']] * phi0[:s['ksill']] / p['L']  # Compute the above-sill fluxes
+     # Compute the above-sill fluxes
+    if type(p['W']) == np.ndarray: # if it is an array of widths, i.e., not a cuboid
+        Q = p['C0'] * p['W'][:s['ksill']] * H0[:s['ksill']] * phi0[:s['ksill']] / p['L']  # Compute the above-sill fluxes
+    else:
+        Q = p['C0'] * p['W'] * H0[:s['ksill']] * phi0[:s['ksill']] / p['L'] 
+
     fw_flux = np.sum(s['Qsg'][:, i]) + np.sum(s['QMp'][:, :, i])         # Compute the freshwater fluxes
 
     # Compute the above-sill fluxes after barotropic compensation
@@ -162,8 +167,13 @@ def get_mixing_fluxes(i, p, s):
     Kz = p['Kb'] + ((Ri < p['Ri0']) & (Ri > 0)) * p['K0'] * (1 - (Ri / p['Ri0'])**2)**3
     
     # Compute the mixing fluxes for salinity (QS) and temperature (QT)
-    QS = 2 * p['W'] * p['L'] * Kz * (S0[1:] - S0[:-1]) / (H0[1:] + H0[:-1])
-    QT = 2 * p['W'] * p['L'] * Kz * (T0[1:] - T0[:-1]) / (H0[1:] + H0[:-1])
+    if type(p['W']) == np.ndarray:
+        W_int = 0.5* (p['W'][1:]+p['W'][:-1]) # width at the interfaces
+        QS = 2 * W_int * p['L'] * Kz * (S0[1:] - S0[:-1]) / (H0[1:] + H0[:-1])
+        QT = 2 * W_int * p['L'] * Kz * (T0[1:] - T0[:-1]) / (H0[1:] + H0[:-1])
+    else:
+        QS = 2 * p['W'] * p['L'] * Kz * (S0[1:] - S0[:-1]) / (H0[1:] + H0[:-1])
+        QT = 2 * p['W'] * p['L'] * Kz * (T0[1:] - T0[:-1]) / (H0[1:] + H0[:-1])
     
     # The final layer fluxes (QSk0, QTk0) are the net of the interface fluxes
     QTk0 = np.concatenate((QT, [0]),axis=0) - np.concatenate(([0], QT),axis=0)
