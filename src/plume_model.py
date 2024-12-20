@@ -96,6 +96,7 @@ def run_plume(j, p, kgl, H0, S0, T0, Qsg0):
     mdot[kgl], Tb[kgl], Sb[kgl] = meltrate(p, u[kgl], Tp[kgl], Sp[kgl], p['Hgl'][j])
 
     # Loop over layers to compute plume dynamics
+    # TODO: can we make this more efficient?
     k = kgl
     while gp[k] > 0 and k < len(H0)-1:
         # Advance the fluxes

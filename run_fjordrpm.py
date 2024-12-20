@@ -19,7 +19,7 @@ assert Nargs < 3, "Too many arguments"
 assert sys.argv[1][-4:] == 'toml' , "config file should be .toml"
 
 fjord_run = FjordRPM(sys.argv[1])
-#fjord_run = FjordRPM('examples/config_example2.toml')
+#fjord_run = FjordRPM('examples/config_example1.toml')
 fjord_run.run_fjord()
 
 # Use the block below if profiling the code
