@@ -134,37 +134,38 @@ class Forcings:
         # make changes to formatting to ensure the proper Ts and Ss structure
         #isinstance(time_begin,pd.Timestamp)
         self.ts = pd.to_datetime(ds.time).to_julian_date()
-        self.Ts = ds.thetao
+        self.zs = ds.depth
+
+        if config.forc_type == 'ocean_field':
+            self.Ts = ds.sel(latitude=fut.nearest(ds.latitude,config.slat),\
+                             longitude=fut.nearest(ds.longitude,config.slon)).thetao
+            self.Ss = ds.sel(latitude=fut.nearest(ds.latitude,config.slat),\
+                             longitude=fut.nearest(ds.longitude,config.slon)).so
+        elif config.forc_type == 'ocean_profile':
+            self.Ts = ds.thetao
+            self.Ss = ds.so
+        else:
+            raise RuntimeError("Unknown forcing type")
         self.Ts['time'] = self.ts
-        self.Ss = ds.so
         self.Ss['time'] = self.ts
-        self.zs = ds.depth #TODO: should depths be positive or negative? bottom-up or top-down? or does it matter at all?
         
         # checking appropriate dimensions
         if (self.Ts.shape[0] != self.zs.shape[0]) or (self.Ts.shape[1] != self.ts.shape[0]):
             if (self.Ts.shape[0] == self.ts.shape[0]):
                 self.Ts = self.Ts.T
-            else:
-                #TODO: throw error
-                return
-            if (self.Ts.shape[1] == self.zs.shape[0]):
+            elif (self.Ts.shape[1] == self.zs.shape[0]):
                 self.Ts = self.Ts.T
             else:
-                #TODO: throw error
-                return
+               raise RuntimeError("Bad dimensions for shelf forcing")
+               
         if (self.Ss.shape[0] != self.zs.shape[0]) or (self.Ss.shape[1] != self.ts.shape[0]):
             if (self.Ss.shape[0] == self.ts.shape[0]):
                 self.Ss = self.Ss.T
-            else:
-                #TODO: throw error
-                return
-            if (self.Ss.shape[1] == self.zs.shape[0]):
+            elif (self.Ss.shape[1] == self.zs.shape[0]):
                 self.Ss = self.Ss.T
             else:
-                #TODO: throw error
-                return    
-            
-            
+               raise RuntimeError("Bad dimensions for shelf forcing")
+
         return 
     
     def get_glacier_forcing(self,config):
@@ -182,13 +183,12 @@ class Forcings:
             if (self.Qsg.shape[1] == self.Hgl.shape[0]):
                 self.Qsg = self.Qsg.T
             else:
-                #TODO: throw error
-                return
+               raise RuntimeError("Bad dimensions for glacier forcing")
+               
             if (self.Qsg.shape[0] == self.tsg.shape[0]):
                 self.Qsg = self.Qsg.T
             else:
-                #TODO: throw error
-                return
+               raise RuntimeError("Bad dimensions for glacier forcing")
         return
     
 

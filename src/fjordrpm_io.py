@@ -193,10 +193,15 @@ def parse_config(object):
 
 
     #Forcing
+    object.forc_type            = tryread(object,"Forcings","shelf_forcing_type",str,["ocean_field","ocean_profile"])
     object.shelf_forcing_file   = tryread(object,"Forcings","shelf_forcing_file",str,checkfile=False,default='')
     object.glacier_forcing_file = tryread(object,"Forcings","glacier_forcing_file",str,checkfile=False,default='')
+    object.iceberg_profile      = tryread(object,"Forcings","iceberg_profile",str,["exponential1","exponential2"])
 
-    object.iceberg_profile = tryread(object,"Forcings","iceberg_profile",str,["exponential1","exponential2"])
+    if object.forc_type == 'ocean_field':
+        object.slat = tryread(object,"Forcings","shelf_lat",float)
+        object.slon = tryread(object,"Forcings","shelf_lon",float)
+        
     match object.iceberg_profile:
         case 'exponential1':  
             object.iceberg_fun = fut.iceberg_fun_exponential1
