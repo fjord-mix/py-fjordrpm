@@ -4,13 +4,16 @@ run_name = 'KangTest'
 [Time]
 time_begin = 2015-01-01 # datetime as YYYY-MM-DD
 time_end   = 2016-01-01 # datetime as YYYY-MM-DD
-dt_model   = 0.1  # model time step (days)
+dt_model   = 0.001  # model time step (days)
 dt_plume   = 0.5  # plume physics time step (days)
 dt_output  = 1.0 # time step to save outputs (days)
 
 [Forcings]
-shelf_forcing_file   = '/Users/mmeb1/Library/CloudStorage/OneDrive/data_common/greenland/FjordMIX/processed_data/coupling_tests/MP_shelf_kang.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
-glacier_forcing_file = '/Users/mmeb1/Library/CloudStorage/OneDrive/data_common/greenland/FjordMIX/processed_data/coupling_tests/Kangerlussuaq_Karlsson2023.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
+shelf_forcing_type   = 'ocean_field' #  {'ocean_field' | 'ocean_profile'} 
+shelf_lat            = 67.5          # if the shelf forcing type is 'ocean_field',
+shelf_lon            = 30.9          # shelf lat and lon need to be prescribed so we know where to take the profile from
+shelf_forcing_file   = './examples/nc_forcings/MP_0p25deg_ocn_grl.nc' # path to .nc file with shelf forcing: thetao(time,depth) and so(time_depth)
+glacier_forcing_file = './examples/nc_forcings/Kangerlussuaq_Karlsson2023.nc' # path to .nc file with glacier forcing: Qsg(n_plumes,time) and grounding-line depth Hgl(n_plumes)
 iceberg_profile      = 'exponential2' # how to prescribe different formulas?
 
 [Initialisation]
@@ -31,7 +34,7 @@ type_hypsometry     = 'cuboid' #{'cuboid','idealised','read_from_file'}
 # tuneable model parameters
 iceberg_area_A0            = 1e8  # submerged iceberg area in the fjord (m^2)
 plume_width_wp             = 250.0  # widths of meltwater plumes (m)
-shelf_exchange_C0          = 1e5  # shelf exchange efficiency (s)
+shelf_exchange_C0          = 1e4  # shelf exchange efficiency (s)
 vertical_mixing_K0         = 5e-3 # vertical mixing scale (-)
 background_mixing_Kb       = 1e-6 # background vertical mixing (-)
 richardson_mixing_Ri0      = 0.7  # Richardson number dependency of mixing (-)
@@ -60,6 +63,7 @@ sid    = 86400    # seconds in a day (useful to have)
 
 
 [Outputs]
-output_dir    = './test_inputs/' # directory where outputs will be saved
+output_dir    = './outputs/' # directory where outputs will be saved
+time_in_cal   = true      # .nc time axis will be in calendar time as opposed to days since the start
 force_new_dir = true
 log_file      = 'log.txt'
