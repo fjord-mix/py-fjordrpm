@@ -47,6 +47,8 @@ def get_plume_fluxes(i, p, s):
                 Qent = s['QEp'][j, :, i - 1]
                 Qmelt = s['QMp'][j, :, i - 1]
                 knb = s['knb'][j, i - 1]
+                if np.isnan(knb): # if there is no plume, assign knb=0 just as a dummy to prevent crashes
+                    knb = 0
 
             # Compute fluxes in layers from grounding line to neutral buoyancy
             QVp0[j, knb+1:kgl+1] = -Qent[knb+1:kgl+1]
@@ -63,7 +65,10 @@ def get_plume_fluxes(i, p, s):
             # Store entrainment, submarine melt flux, and neutral buoyancy
             QEp0[j, :] = Qent
             QMp0[j, :] = Qmelt
-            knb0[j] = knb
+            if np.isnan(s['knb'][j, i - 1]): # we had to assign 0 to make the indices work, 
+                knb0[j] = np.nan             # but we want to store that there is no plume
+            else:
+                knb0[j] = knb
             
     return QVp0, QTp0, QSp0, QEp0, QMp0, knb0
 
